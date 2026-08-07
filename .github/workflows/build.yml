@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout NDK Repository
         uses: actions/checkout@v4
+        with:
+          path: 'ndk'
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -37,14 +39,17 @@ jobs:
           pip install poetry
 
       - name: Install Python Dependencies
+        working-directory: ndk
         run: |
           PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring poetry install
 
       - name: Run NDK Checkbuild Help Test
+        working-directory: ndk
         run: |
           poetry run python checkbuild.py --help
 
       - name: Build NDK Readme & Core Components
+        working-directory: ndk
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.build_args }}" ]; then
             poetry run python checkbuild.py ${{ github.event.inputs.build_args }}
