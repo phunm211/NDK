@@ -1,0 +1,9 @@
+enh@google.com
+include toolchain/llvm_android:main:/OWNERS
+
+# For questions rather than code review, send email to:
+#
+# android-ndk@google.com (Googlers only)
+# android-ndk@googlegroups.com (public)
+#
+# Ask on Stack Overflow: http://stackoverflow.com/questions/tagged/android-ndk.
