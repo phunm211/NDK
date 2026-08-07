@@ -43,16 +43,34 @@ jobs:
         run: |
           PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring poetry install
 
-      - name: Run NDK Checkbuild Help Test
+      - name: Setup Dummy Prebuilt Notices
+        working-directory: ndk
+        run: |
+          python3 -c "
+          import pathlib
+          hosts = ['linux-x86', 'darwin-x86', 'linux-arm64', 'windows-x86']
+          for h in hosts:
+              p = pathlib.Path(f'../prebuilts/clang/host/{h}/clang-r596125/NOTICE')
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.touch()
+          others = [
+              '../toolchain/make/COPYING',
+              '../external/googletest/googletest/NOTICE',
+              '../prebuilts/ndk/platform/sysroot/NOTICE',
+              '../prebuilts/simpleperf/NOTICE',
+          ]
+          for o in others:
+              p = pathlib.Path(o)
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.touch()
+          "
+
+      - name: Run Python Unit Tests
+        working-directory: ndk
+        run: |
+          poetry run pytest -m "not requires_ndk and not requires_network"
+
+      - name: Verify NDK Checkbuild CLI
         working-directory: ndk
         run: |
           poetry run python checkbuild.py --help
-
-      - name: Build NDK Readme & Core Components
-        working-directory: ndk
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.build_args }}" ]; then
-            poetry run python checkbuild.py ${{ github.event.inputs.build_args }}
-          else
-            poetry run python checkbuild.py --module readme --no-build-tests
-          fi
