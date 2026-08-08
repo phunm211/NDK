@@ -1,4 +1,4 @@
-name: Build NDK with repo (mirror-goog-main-ndk)
+name: Build NDK with repo (ndk-r30-beta1 + mirror clang)
 
 on:
   workflow_dispatch:
@@ -23,13 +23,44 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Initialize repo (Google official instructions)
+      - name: Initialize repo
         run: |
-          repo init -u https://android.googlesource.com/platform/manifest -b master-ndk --partial-clone
+          repo init -u https://android.googlesource.com/platform/manifest -b ndk-r30-beta1 --partial-clone
 
       - name: Sync all projects
         run: |
           repo sync -j 4
+
+      - name: Switch clang prebuilts to mirror-goog-main-llvm-toolchain-source
+        run: |
+          set -e
+          for dir in prebuilts/clang/host/linux-x86 prebuilts/clang/host/windows-x86 platform/prebuilts/clang/host/darwin-x86; do
+            if [ -d "$dir" ]; then
+              echo "Switching $dir to mirror-goog-main-llvm-toolchain-source"
+              cd "$dir"
+              git fetch origin mirror-goog-main-llvm-toolchain-source || true
+              git checkout mirror-goog-main-llvm-toolchain-source || echo "Branch not found in $dir"
+              cd "$GITHUB_WORKSPACE"
+            else
+              echo "Directory $dir not found"
+            fi
+          done
+
+      - name: Verify clang-r596125 exists
+        run: |
+          set -e
+          for dir in prebuilts/clang/host/linux-x86 prebuilts/clang/host/windows-x86 platform/prebuilts/clang/host/darwin-x86; do
+            if [ -d "$dir/clang-r596125" ]; then
+              echo "FOUND: $dir/clang-r596125"
+            else
+              echo "MISSING: $dir/clang-r596125"
+            fi
+          done
+
+      - name: Update CLANG_VERSION in toolchains.py
+        run: |
+          sed -i 's/^CLANG_VERSION = .*/CLANG_VERSION = "clang-r596125"/' ndk/toolchains.py
+          grep '^CLANG_VERSION' ndk/toolchains.py
 
       - name: Install Poetry & Python Dependencies
         working-directory: ndk
