@@ -54,7 +54,7 @@ jobs:
       - name: Fetch AOSP NDK Prebuilts
         working-directory: ndk
         run: |
-          python3 scripts/fetch_prebuilts.py --host all --jobs 4
+          poetry run python3 scripts/fetch_prebuilts.py --host all --jobs 4
 
       - name: Run Python Unit Tests
         working-directory: ndk
@@ -64,7 +64,7 @@ jobs:
       - name: Build NDK for Windows64
         working-directory: ndk
         run: |
-          python3 checkbuild.py --system windows64 ${{ github.event.inputs.build_args || '--no-build-tests' }}
+          poetry run python3 checkbuild.py --system windows64 ${{ github.event.inputs.build_args || '--no-build-tests' }}
 
       - name: Upload NDK Artifacts
         uses: actions/upload-artifact@v4
