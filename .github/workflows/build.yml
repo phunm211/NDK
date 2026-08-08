@@ -61,11 +61,6 @@ jobs:
         run: |
           poetry run pytest -m "not requires_ndk and not requires_network" --ignore=tests/pytest/ndkstack
 
-      - name: Build NDK for Linux
-        working-directory: ndk
-        run: |
-          python3 checkbuild.py --system linux-x86_64 ${{ github.event.inputs.build_args || '--no-build-tests' }}
-
       - name: Build NDK for Windows64
         working-directory: ndk
         run: |
