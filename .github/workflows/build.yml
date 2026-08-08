@@ -54,10 +54,10 @@ jobs:
         run: |
           PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring poetry install
 
-      - name: Fetch AOSP NDK Prebuilts (Parallel & Cached)
+      - name: Fetch ALL AOSP NDK Prebuilts (Linux, Darwin, Windows)
         working-directory: ndk
         run: |
-          python3 scripts/fetch_prebuilts.py --host linux --jobs 4
+          python3 scripts/fetch_prebuilts.py --host all --jobs 4
 
       - name: Run Python Unit Tests
         working-directory: ndk
