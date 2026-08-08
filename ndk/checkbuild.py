@@ -387,7 +387,12 @@ class Clang(ndk.builds.Module):
         if CLANG_VERSION == "clang-dev":
             return
         for host in Host:
-            yield ClangToolchain.path_for_host(host) / "NOTICE"
+            notice = ClangToolchain.path_for_host(host) / "NOTICE"
+            # The AOSP master-ndk manifest does not provide linux-arm64 Clang
+            # prebuilts, so only validate notices for hosts that actually have
+            # a downloaded prebuilt toolchain present.
+            if notice.exists():
+                yield notice
 
     def build(self) -> None:
         pass

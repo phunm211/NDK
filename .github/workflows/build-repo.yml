@@ -1,0 +1,74 @@
+name: Build NDK with repo (mirror-goog-main-ndk)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build NDK via repo sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install repo tool
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y repo build-essential zip unzip flex bison texinfo pbzip2 mingw-w64
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check manifest branch availability
+        run: |
+          echo "Checking if branch mirror-goog-main-ndk exists in the manifest repo..."
+          if curl -sf "https://android.googlesource.com/platform/manifest/+/refs/heads/mirror-goog-main-ndk/default.xml?format=TEXT" > /dev/null; then
+            echo "Branch mirror-goog-main-ndk EXISTS."
+          else
+            echo "Branch mirror-goog-main-ndk DOES NOT EXIST (HTTP 404)."
+            echo "Falling back to the official master-ndk branch per Google docs."
+          fi
+
+      - name: Initialize repo (Google official instructions)
+        run: |
+          # Per https://android.googlesource.com/platform/ndk/+/mirror-goog-main-ndk/docs/Building.md
+          # The official command uses -b master-ndk. We attempt mirror-goog-main-ndk first,
+          # and fall back to master-ndk if the branch does not exist.
+          if curl -sf "https://android.googlesource.com/platform/manifest/+/refs/heads/mirror-goog-main-ndk/default.xml?format=TEXT" > /dev/null; then
+            repo init -u https://android.googlesource.com/platform/manifest -b mirror-goog-main-ndk --partial-clone
+          else
+            repo init -u https://android.googlesource.com/platform/manifest -b master-ndk --partial-clone
+          fi
+
+      - name: Sync all projects
+        run: |
+          repo sync -j 4
+
+      - name: Install Poetry & Python Dependencies
+        working-directory: ndk
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring poetry install
+
+      - name: Run Python Unit Tests
+        working-directory: ndk
+        run: |
+          poetry run pytest -m "not requires_ndk and not requires_network" --ignore=tests/pytest/ndkstack
+
+      - name: Build NDK for Windows64
+        working-directory: ndk
+        run: |
+          poetry run python3 checkbuild.py --system windows64 --no-build-tests
+
+      - name: Upload NDK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-ndk-builds
+          path: |
+            out/dist/android-ndk-*.zip
+            out/dist/android-ndk-*.tar.bz2
