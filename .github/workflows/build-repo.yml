@@ -23,26 +23,9 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Check manifest branch availability
-        run: |
-          echo "Checking if branch mirror-goog-main-ndk exists in the manifest repo..."
-          if curl -sf "https://android.googlesource.com/platform/manifest/+/refs/heads/mirror-goog-main-ndk/default.xml?format=TEXT" > /dev/null; then
-            echo "Branch mirror-goog-main-ndk EXISTS."
-          else
-            echo "Branch mirror-goog-main-ndk DOES NOT EXIST (HTTP 404)."
-            echo "Falling back to the official master-ndk branch per Google docs."
-          fi
-
       - name: Initialize repo (Google official instructions)
         run: |
-          # Per https://android.googlesource.com/platform/ndk/+/mirror-goog-main-ndk/docs/Building.md
-          # The official command uses -b master-ndk. We attempt mirror-goog-main-ndk first,
-          # and fall back to master-ndk if the branch does not exist.
-          if curl -sf "https://android.googlesource.com/platform/manifest/+/refs/heads/mirror-goog-main-ndk/default.xml?format=TEXT" > /dev/null; then
-            repo init -u https://android.googlesource.com/platform/manifest -b mirror-goog-main-ndk --partial-clone
-          else
-            repo init -u https://android.googlesource.com/platform/manifest -b master-ndk --partial-clone
-          fi
+          repo init -u https://android.googlesource.com/platform/manifest -b master-ndk --partial-clone
 
       - name: Sync all projects
         run: |
